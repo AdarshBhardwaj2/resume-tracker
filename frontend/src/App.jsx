@@ -275,7 +275,6 @@ function App() {
     <div className="shell">
       <header className="header">
         <div className="header-copy">
-          <p className="header-kicker">Student Project</p>
           <h1>Resume Tracker</h1>
           <p className="header-subtitle">Applications, resume match, email analysis, and interview preparation.</p>
         </div>
