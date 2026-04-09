@@ -10,8 +10,7 @@ import com.resume.tracker.repository.EmailAnalysisRepository;
 import com.resume.tracker.repository.JobApplicationRepository;
 import com.resume.tracker.repository.UserRepository;
 import com.resume.tracker.security.JwtService;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,34 +20,38 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
     private final JobApplicationRepository jobApplicationRepository;
     private final EmailAnalysisRepository emailAnalysisRepository;
+    private final String loginUsername;
+    private final String loginPassword;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
-                       AuthenticationManager authenticationManager,
                        JobApplicationRepository jobApplicationRepository,
-                       EmailAnalysisRepository emailAnalysisRepository) {
+                       EmailAnalysisRepository emailAnalysisRepository,
+                       @Value("${app.login.username:admin}") String loginUsername,
+                       @Value("${app.login.password:admin12345}") String loginPassword) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.authenticationManager = authenticationManager;
         this.jobApplicationRepository = jobApplicationRepository;
         this.emailAnalysisRepository = emailAnalysisRepository;
+        this.loginUsername = loginUsername;
+        this.loginPassword = loginPassword;
     }
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
-            throw new IllegalArgumentException("An account with this email already exists");
+        String username = request.getUsername().trim().toLowerCase();
+        if (userRepository.existsByEmailIgnoreCase(username)) {
+            throw new IllegalArgumentException("Username already exists");
         }
 
         boolean firstUser = userRepository.count() == 0;
 
         User user = new User();
-        user.setFullName(request.getFullName().trim());
-        user.setEmail(request.getEmail().trim().toLowerCase());
+        user.setFullName(username);
+        user.setEmail(username);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(firstUser ? UserRole.ADMIN : UserRole.USER);
         user = userRepository.save(user);
@@ -72,11 +75,18 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
-        User user = userRepository.findByEmailIgnoreCase(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        String username = request.getUsername().trim().toLowerCase();
+
+        if (loginUsername.equalsIgnoreCase(username) && loginPassword.equals(request.getPassword())) {
+            User defaultUser = getOrCreateDefaultUser();
+            return buildAuthResponse(defaultUser);
+        }
+
+        User user = userRepository.findByEmailIgnoreCase(username)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid username or password");
+        }
         return buildAuthResponse(user);
     }
 
@@ -100,5 +110,30 @@ public class AuthService {
         response.setEmail(user.getEmail());
         response.setRole(user.getRole().name());
         return response;
+    }
+
+    public User getOrCreateDefaultUser() {
+        return userRepository.findByEmailIgnoreCase(loginUsername)
+                .orElseGet(() -> {
+                    User user = new User();
+                    user.setFullName("Resume Tracker Admin");
+                    user.setEmail(loginUsername);
+                    user.setPasswordHash(passwordEncoder.encode(loginPassword));
+                    user.setRole(UserRole.ADMIN);
+                    User savedUser = userRepository.save(user);
+
+                    var orphanedApplications = jobApplicationRepository.findByOwnerIsNull();
+                    orphanedApplications.forEach(application -> application.setOwner(savedUser));
+                    if (!orphanedApplications.isEmpty()) {
+                        jobApplicationRepository.saveAll(orphanedApplications);
+                    }
+
+                    var orphanedEmails = emailAnalysisRepository.findByOwnerIsNull();
+                    orphanedEmails.forEach(email -> email.setOwner(savedUser));
+                    if (!orphanedEmails.isEmpty()) {
+                        emailAnalysisRepository.saveAll(orphanedEmails);
+                    }
+                    return savedUser;
+                });
     }
 }

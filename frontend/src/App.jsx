@@ -48,8 +48,7 @@ const emptyResumeMatch = {
 };
 
 const emptyAuth = {
-  fullName: "",
-  email: "",
+  username: "",
   password: ""
 };
 
@@ -159,10 +158,9 @@ function App() {
     setSubmitting(true);
     setError("");
     try {
-      const payload = authMode === "register"
-        ? authForm
-        : { email: authForm.email, password: authForm.password };
-      const response = authMode === "register" ? await register(payload) : await login(payload);
+      const response = authMode === "register"
+        ? await register(authForm)
+        : await login(authForm);
       storeSession(response);
       setUser(response.user);
       setAuthForm(emptyAuth);
@@ -364,10 +362,10 @@ function App() {
         <section className="auth-shell">
           <div className="card card-large auth-copy">
             <p className="section-title">Resume Tracker</p>
-            <h1>Private workspace for applications, recruiter emails, and resume fit.</h1>
+            <h1>Track applications, recruiter emails, and resume fit.</h1>
             <div className="list">
               {[
-                "Create your own account and keep applications private.",
+                "Use one simple login to open the tracker.",
                 "Track every role, follow-up, and resume version in one place.",
                 "Turn recruiter emails into next steps, urgency, and reply drafts."
               ].map((item) => (
@@ -388,10 +386,7 @@ function App() {
             {error ? <div className="notice notice-error">{error}</div> : null}
 
             <form className="form-grid" onSubmit={handleAuthSubmit}>
-              {authMode === "register" ? (
-                <input className="input full-span" name="fullName" value={authForm.fullName} onChange={updateAuthField} placeholder="Full name" required />
-              ) : null}
-              <input className="input full-span" name="email" type="email" value={authForm.email} onChange={updateAuthField} placeholder="Email" required />
+              <input className="input full-span" name="username" value={authForm.username} onChange={updateAuthField} placeholder="Username" required />
               <input className="input full-span" name="password" type="password" value={authForm.password} onChange={updateAuthField} placeholder="Password" required />
               <div className="actions full-span">
                 <button className="button button-primary" disabled={submitting}>

@@ -6,6 +6,7 @@ import com.resume.tracker.model.JobApplication;
 import com.resume.tracker.model.PriorityLevel;
 import com.resume.tracker.repository.EmailAnalysisRepository;
 import com.resume.tracker.repository.JobApplicationRepository;
+import com.resume.tracker.service.AuthService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -17,15 +18,20 @@ public class DataSeeder implements CommandLineRunner {
 
     private final JobApplicationRepository jobApplicationRepository;
     private final EmailAnalysisRepository emailAnalysisRepository;
+    private final AuthService authService;
 
     public DataSeeder(JobApplicationRepository jobApplicationRepository,
-                      EmailAnalysisRepository emailAnalysisRepository) {
+                      EmailAnalysisRepository emailAnalysisRepository,
+                      AuthService authService) {
         this.jobApplicationRepository = jobApplicationRepository;
         this.emailAnalysisRepository = emailAnalysisRepository;
+        this.authService = authService;
     }
 
     @Override
     public void run(String... args) {
+        authService.getOrCreateDefaultUser();
+
         if (jobApplicationRepository.count() > 0 || emailAnalysisRepository.count() > 0) {
             return;
         }
