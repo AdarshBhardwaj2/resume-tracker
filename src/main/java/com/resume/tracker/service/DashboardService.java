@@ -3,9 +3,9 @@ package com.resume.tracker.service;
 import com.resume.tracker.dto.DashboardStatsResponse;
 import com.resume.tracker.mapper.TrackerMapper;
 import com.resume.tracker.model.ApplicationStatus;
-import com.resume.tracker.model.User;
 import com.resume.tracker.repository.EmailAnalysisRepository;
 import com.resume.tracker.repository.JobApplicationRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -22,32 +22,29 @@ public class DashboardService {
     private final JobApplicationRepository jobApplicationRepository;
     private final EmailAnalysisRepository emailAnalysisRepository;
     private final TrackerMapper trackerMapper;
-    private final CurrentUserService currentUserService;
 
     public DashboardService(JobApplicationRepository jobApplicationRepository,
                             EmailAnalysisRepository emailAnalysisRepository,
-                            TrackerMapper trackerMapper,
-                            CurrentUserService currentUserService) {
+                            TrackerMapper trackerMapper) {
         this.jobApplicationRepository = jobApplicationRepository;
         this.emailAnalysisRepository = emailAnalysisRepository;
         this.trackerMapper = trackerMapper;
-        this.currentUserService = currentUserService;
     }
 
+    @Cacheable("dashboardStats")
     public DashboardStatsResponse getDashboardStats() {
         DashboardStatsResponse response = new DashboardStatsResponse();
-        User currentUser = currentUserService.getCurrentUser();
-        List<com.resume.tracker.model.JobApplication> applications = jobApplicationRepository.findByOwnerOrderByUpdatedAtDesc(currentUser);
-        long total = jobApplicationRepository.countByOwner(currentUser);
-        long active = jobApplicationRepository.countByOwnerAndStatusIn(currentUser, List.of(
+        List<com.resume.tracker.model.JobApplication> applications = jobApplicationRepository.findAll();
+        long total = jobApplicationRepository.count();
+        long active = jobApplicationRepository.countByStatusIn(List.of(
                 ApplicationStatus.APPLIED,
                 ApplicationStatus.SHORTLISTED,
                 ApplicationStatus.INTERVIEW
         ));
-        long interviews = jobApplicationRepository.countByOwnerAndStatus(currentUser, ApplicationStatus.INTERVIEW);
-        long followUps = jobApplicationRepository.countByOwnerAndFollowUpDateLessThanEqual(currentUser, LocalDate.now().plusDays(2));
-        long offers = jobApplicationRepository.countByOwnerAndStatus(currentUser, ApplicationStatus.OFFER);
-        long rejections = jobApplicationRepository.countByOwnerAndStatus(currentUser, ApplicationStatus.REJECTED);
+        long interviews = jobApplicationRepository.countByStatus(ApplicationStatus.INTERVIEW);
+        long followUps = jobApplicationRepository.countByFollowUpDateLessThanEqual(LocalDate.now().plusDays(2));
+        long offers = jobApplicationRepository.countByStatus(ApplicationStatus.OFFER);
+        long rejections = jobApplicationRepository.countByStatus(ApplicationStatus.REJECTED);
         long thisWeek = applications.stream()
                 .filter(application -> !application.getAppliedDate().isBefore(LocalDate.now().minusDays(7)))
                 .count();
@@ -78,11 +75,11 @@ public class DashboardService {
         response.setStatusBreakdown(enumBreakdown());
         response.setPriorityBreakdown(applications.stream()
                 .collect(Collectors.groupingBy(application -> application.getPriority().name(), LinkedHashMap::new, Collectors.counting())));
-        response.setRecentApplications(jobApplicationRepository.findTop5ByOwnerOrderByUpdatedAtDesc(currentUser)
+        response.setRecentApplications(jobApplicationRepository.findTop5ByOrderByUpdatedAtDesc()
                 .stream()
                 .map(trackerMapper::toApplicationResponse)
                 .toList());
-        response.setRecentEmailInsights(emailAnalysisRepository.findTop5ByOwnerOrderByCreatedAtDesc(currentUser)
+        response.setRecentEmailInsights(emailAnalysisRepository.findTop5ByOrderByCreatedAtDesc()
                 .stream()
                 .map(trackerMapper::toEmailResponse)
                 .toList());
@@ -117,10 +114,9 @@ public class DashboardService {
 
     private Map<String, Long> enumBreakdown() {
         Map<String, Long> breakdown = new LinkedHashMap<>();
-        User currentUser = currentUserService.getCurrentUser();
         Arrays.stream(ApplicationStatus.values()).forEach(status -> breakdown.put(
                 status.name(),
-                jobApplicationRepository.countByOwnerAndStatus(currentUser, status)
+                jobApplicationRepository.countByStatus(status)
         ));
         return breakdown;
     }

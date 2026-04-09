@@ -9,6 +9,14 @@ import {
   fetchDashboard,
   fetchEmailInsights,
   fetchInterviewPrep,
+<<<<<<< ours
+=======
+  fetchMe,
+  getStoredUser,
+  getToken,
+  login,
+  storeSession,
+>>>>>>> theirs
   updateApplication
 } from "./api";
 
@@ -40,11 +48,33 @@ const emptyResumeMatch = {
   jobDescription: ""
 };
 
+<<<<<<< ours
+=======
+const emptyAuth = {
+  fullName: "",
+  email: "",
+  password: ""
+};
+
+>>>>>>> theirs
 const statusOptions = ["SAVED", "APPLIED", "SHORTLISTED", "INTERVIEW", "OFFER", "REJECTED"];
 const priorityOptions = ["LOW", "MEDIUM", "HIGH"];
 const tabs = ["overview", "applications", "emails", "resume-match", "interview-prep"];
 
 function App() {
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+=======
+  const [user, setUser] = useState(getStoredUser());
+=======
+=======
+>>>>>>> theirs
+  const [user, setUser] = useState(getStoredUser());
+  const [authMode, setAuthMode] = useState("login");
+>>>>>>> theirs
+  const [authForm, setAuthForm] = useState(emptyAuth);
+>>>>>>> theirs
   const [dashboard, setDashboard] = useState(null);
   const [applications, setApplications] = useState([]);
   const [emailInsights, setEmailInsights] = useState([]);
@@ -64,6 +94,49 @@ function App() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+<<<<<<< ours
+=======
+  useEffect(() => {
+    async function bootstrap() {
+      if (!getToken()) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const currentUser = await fetchMe();
+        setUser(currentUser);
+      } catch {
+        clearSession();
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    bootstrap();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user, filters.status, filters.keyword]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    async function loadInterviewPrep() {
+      try {
+        const data = await fetchInterviewPrep(interviewRole);
+        setInterviewPrep(data);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+    loadInterviewPrep();
+  }, [user, interviewRole]);
+
+>>>>>>> theirs
   async function loadData() {
     setLoading(true);
     setError("");
@@ -83,10 +156,42 @@ function App() {
     }
   }
 
+<<<<<<< ours
   useEffect(() => {
     loadData();
   }, [filters.status, filters.keyword]);
+=======
+  function handleAuthError(err) {
+    if (err.message === "Authentication required") {
+      clearSession();
+      setUser(null);
+<<<<<<< ours
+<<<<<<< ours
+=======
+      setDashboard(null);
+      setApplications([]);
+      setEmailInsights([]);
+      setInterviewPrep(null);
+      setResumeMatchResult(null);
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+      setError("Your session expired. Please sign in again.");
+      return;
+    }
+    setError(err.message);
+  }
 
+  function updateAuthField(event) {
+    const { name, value } = event.target;
+    setAuthForm((current) => ({ ...current, [name]: value }));
+  }
+>>>>>>> theirs
+
+<<<<<<< ours
   useEffect(() => {
     async function loadInterviewPrep() {
       try {
@@ -95,9 +200,48 @@ function App() {
       } catch (err) {
         setError(err.message);
       }
+=======
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+<<<<<<< ours
+      const payload = authMode === "register"
+        ? authForm
+        : { email: authForm.email, password: authForm.password };
+      const response = authMode === "register" ? await register(payload) : await login(payload);
+=======
+      const response = await login(authForm);
+>>>>>>> theirs
+      storeSession(response);
+      setUser(response.user);
+      setAuthForm(emptyAuth);
+      setMessage("Signed in.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+>>>>>>> theirs
     }
+<<<<<<< ours
     loadInterviewPrep();
   }, [interviewRole]);
+=======
+  }
+
+  function handleLogout() {
+    clearSession();
+    setUser(null);
+    setDashboard(null);
+    setApplications([]);
+    setEmailInsights([]);
+    setInterviewPrep(null);
+    setResumeMatchResult(null);
+    setMessage("");
+    setError("");
+  }
+>>>>>>> theirs
 
   function updateApplicationField(event) {
     const { name, value } = event.target;
@@ -271,6 +415,71 @@ function App() {
     URL.revokeObjectURL(url);
   }
 
+<<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
+=======
+=======
+>>>>>>> theirs
+=======
+>>>>>>> theirs
+  if (!user) {
+    return (
+      <div className="shell">
+        <section className="auth-shell">
+          <div className="card card-large auth-copy">
+            <p className="section-title">Resume Tracker</p>
+            <h1>Private workspace for applications, recruiter emails, and resume fit.</h1>
+            <div className="list">
+              {[
+                "Create your own account and keep applications private.",
+                "Track every role, follow-up, and resume version in one place.",
+                "Turn recruiter emails into next steps, urgency, and reply drafts."
+              ].map((item) => (
+                <div key={item} className="list-item">
+                  <span className="dot" />
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="card auth-card">
+            <div className="auth-toggle">
+<<<<<<< ours
+<<<<<<< ours
+              <button className="tab tab-active">Login</button>
+=======
+              <button className={`tab ${authMode === "login" ? "tab-active" : ""}`} onClick={() => setAuthMode("login")}>Login</button>
+              <button className={`tab ${authMode === "register" ? "tab-active" : ""}`} onClick={() => setAuthMode("register")}>Register</button>
+>>>>>>> theirs
+=======
+              <button className={`tab ${authMode === "login" ? "tab-active" : ""}`} onClick={() => setAuthMode("login")}>Login</button>
+              <button className={`tab ${authMode === "register" ? "tab-active" : ""}`} onClick={() => setAuthMode("register")}>Register</button>
+>>>>>>> theirs
+            </div>
+
+            {error ? <div className="notice notice-error">{error}</div> : null}
+
+            <form className="form-grid" onSubmit={handleAuthSubmit}>
+              {authMode === "register" ? (
+                <input className="input full-span" name="fullName" value={authForm.fullName} onChange={updateAuthField} placeholder="Full name" required />
+              ) : null}
+              <input className="input full-span" name="email" type="email" value={authForm.email} onChange={updateAuthField} placeholder="Email" required />
+              <input className="input full-span" name="password" type="password" value={authForm.password} onChange={updateAuthField} placeholder="Password" required />
+              <div className="actions full-span">
+                <button className="button button-primary" disabled={submitting}>
+                  {submitting ? "Please wait..." : "Sign in"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+>>>>>>> theirs
   return (
     <div className="shell">
       <header className="header">

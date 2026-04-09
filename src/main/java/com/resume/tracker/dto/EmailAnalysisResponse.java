@@ -17,12 +17,6 @@ public class EmailAnalysisResponse {
     private Integer confidenceScore;
     private String summary;
     private String suggestedAction;
-    private Boolean actionRequired;
-    private String recruiterIntent;
-    private String responseWindow;
-    private String nextStep;
-    private String replyDraft;
-    private String riskLevel;
     private Long applicationId;
     private String applicationLabel;
     private LocalDateTime createdAt;
@@ -113,54 +107,6 @@ public class EmailAnalysisResponse {
 
     public void setSuggestedAction(String suggestedAction) {
         this.suggestedAction = suggestedAction;
-    }
-
-    public Boolean getActionRequired() {
-        return actionRequired;
-    }
-
-    public void setActionRequired(Boolean actionRequired) {
-        this.actionRequired = actionRequired;
-    }
-
-    public String getRecruiterIntent() {
-        return recruiterIntent;
-    }
-
-    public void setRecruiterIntent(String recruiterIntent) {
-        this.recruiterIntent = recruiterIntent;
-    }
-
-    public String getResponseWindow() {
-        return responseWindow;
-    }
-
-    public void setResponseWindow(String responseWindow) {
-        this.responseWindow = responseWindow;
-    }
-
-    public String getNextStep() {
-        return nextStep;
-    }
-
-    public void setNextStep(String nextStep) {
-        this.nextStep = nextStep;
-    }
-
-    public String getReplyDraft() {
-        return replyDraft;
-    }
-
-    public void setReplyDraft(String replyDraft) {
-        this.replyDraft = replyDraft;
-    }
-
-    public String getRiskLevel() {
-        return riskLevel;
-    }
-
-    public void setRiskLevel(String riskLevel) {
-        this.riskLevel = riskLevel;
     }
 
     public Long getApplicationId() {

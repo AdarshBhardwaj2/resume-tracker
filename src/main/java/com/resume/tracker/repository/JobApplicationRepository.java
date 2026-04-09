@@ -2,7 +2,6 @@ package com.resume.tracker.repository;
 
 import com.resume.tracker.model.ApplicationStatus;
 import com.resume.tracker.model.JobApplication;
-import com.resume.tracker.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
@@ -10,19 +9,15 @@ import java.util.List;
 
 public interface JobApplicationRepository extends JpaRepository<JobApplication, Long> {
 
-    List<JobApplication> findByOwnerOrderByUpdatedAtDesc(User owner);
+    List<JobApplication> findByStatus(ApplicationStatus status);
 
-    List<JobApplication> findByOwnerAndStatus(User owner, ApplicationStatus status);
+    List<JobApplication> findByCompanyContainingIgnoreCaseOrRoleContainingIgnoreCase(String company, String role);
 
-    long countByOwner(User owner);
+    long countByStatusIn(List<ApplicationStatus> statuses);
 
-    long countByOwnerAndStatusIn(User owner, List<ApplicationStatus> statuses);
+    long countByStatus(ApplicationStatus status);
 
-    long countByOwnerAndStatus(User owner, ApplicationStatus status);
+    long countByFollowUpDateLessThanEqual(LocalDate date);
 
-    long countByOwnerAndFollowUpDateLessThanEqual(User owner, LocalDate date);
-
-    List<JobApplication> findTop5ByOwnerOrderByUpdatedAtDesc(User owner);
-
-    List<JobApplication> findByOwnerIsNull();
+    List<JobApplication> findTop5ByOrderByUpdatedAtDesc();
 }

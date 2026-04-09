@@ -6,7 +6,6 @@ import com.resume.tracker.model.JobApplication;
 import com.resume.tracker.model.PriorityLevel;
 import com.resume.tracker.repository.EmailAnalysisRepository;
 import com.resume.tracker.repository.JobApplicationRepository;
-import com.resume.tracker.service.AuthService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -18,20 +17,15 @@ public class DataSeeder implements CommandLineRunner {
 
     private final JobApplicationRepository jobApplicationRepository;
     private final EmailAnalysisRepository emailAnalysisRepository;
-    private final AuthService authService;
 
     public DataSeeder(JobApplicationRepository jobApplicationRepository,
-                      EmailAnalysisRepository emailAnalysisRepository,
-                      AuthService authService) {
+                      EmailAnalysisRepository emailAnalysisRepository) {
         this.jobApplicationRepository = jobApplicationRepository;
         this.emailAnalysisRepository = emailAnalysisRepository;
-        this.authService = authService;
     }
 
     @Override
     public void run(String... args) {
-        authService.getOrCreateDefaultUser();
-
         if (jobApplicationRepository.count() > 0 || emailAnalysisRepository.count() > 0) {
             return;
         }
@@ -77,12 +71,6 @@ public class DataSeeder implements CommandLineRunner {
         emailAnalysis.setConfidenceScore(88);
         emailAnalysis.setSummary("Recruiter confirmed the next round and expects a quick response.");
         emailAnalysis.setSuggestedAction("Reply with interview availability and prepare system design talking points.");
-        emailAnalysis.setActionRequired(true);
-        emailAnalysis.setRecruiterIntent("Schedule interview");
-        emailAnalysis.setResponseWindow("Reply within 24 hours");
-        emailAnalysis.setNextStep("Send your available interview slots and confirm your timezone.");
-        emailAnalysis.setReplyDraft("Hi, thank you for the update. I am available for the next round and can share suitable time slots today. Please let me know the preferred time zone for scheduling.");
-        emailAnalysis.setRiskLevel("High");
         emailAnalysis.setApplication(applicationOne);
 
         emailAnalysisRepository.save(emailAnalysis);
