@@ -78,6 +78,7 @@ function App() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
 
   useEffect(() => {
     async function bootstrap() {
@@ -93,6 +94,7 @@ function App() {
       } catch {
         clearSession();
         setUser(null);
+        setAuthNotice("");
       } finally {
         setLoading(false);
       }
@@ -149,7 +151,9 @@ function App() {
       setEmailInsights([]);
       setInterviewPrep(null);
       setResumeMatchResult(null);
-      setError("Your session expired. Please sign in again.");
+      setError("");
+      setMessage("");
+      setAuthNotice("Please sign in to continue.");
       return;
     }
     setError(err.message);
@@ -157,6 +161,8 @@ function App() {
 
   function updateAuthField(event) {
     const { name, value } = event.target;
+    setError("");
+    setAuthNotice("");
     setAuthForm((current) => ({ ...current, [name]: value }));
   }
 
@@ -164,6 +170,7 @@ function App() {
     event.preventDefault();
     setSubmitting(true);
     setError("");
+    setAuthNotice("");
     try {
       const response = authMode === "register"
         ? await register(authForm)
@@ -189,6 +196,7 @@ function App() {
     setResumeMatchResult(null);
     setMessage("");
     setError("");
+    setAuthNotice("");
   }
 
   function updateApplicationField(event) {
@@ -399,10 +407,29 @@ function App() {
 
           <div className="card auth-card">
             <div className="auth-toggle">
-              <button className={`tab ${authMode === "login" ? "tab-active" : ""}`} onClick={() => setAuthMode("login")}>Login</button>
-              <button className={`tab ${authMode === "register" ? "tab-active" : ""}`} onClick={() => setAuthMode("register")}>Register</button>
+              <button
+                className={`tab ${authMode === "login" ? "tab-active" : ""}`}
+                onClick={() => {
+                  setAuthMode("login");
+                  setError("");
+                  setAuthNotice("");
+                }}
+              >
+                Login
+              </button>
+              <button
+                className={`tab ${authMode === "register" ? "tab-active" : ""}`}
+                onClick={() => {
+                  setAuthMode("register");
+                  setError("");
+                  setAuthNotice("");
+                }}
+              >
+                Register
+              </button>
             </div>
 
+            {authNotice ? <div className="notice notice-error">{authNotice}</div> : null}
             {error ? <div className="notice notice-error">{error}</div> : null}
 
             <form className="form-grid" onSubmit={handleAuthSubmit}>
