@@ -57,7 +57,7 @@ const priorityOptions = ["LOW", "MEDIUM", "HIGH"];
 const tabs = ["overview", "applications", "emails", "resume-match", "interview-prep"];
 
 function App() {
-  const [user, setUser] = useState(getStoredUser());
+  const [user, setUser] = useState(() => (getToken() ? getStoredUser() : null));
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState(emptyAuth);
   const [dashboard, setDashboard] = useState(null);
@@ -82,6 +82,8 @@ function App() {
   useEffect(() => {
     async function bootstrap() {
       if (!getToken()) {
+        clearSession();
+        setUser(null);
         setLoading(false);
         return;
       }
@@ -99,7 +101,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && getToken()) {
       loadData();
     }
   }, [user, filters.status, filters.keyword]);
@@ -142,6 +144,11 @@ function App() {
     if (err.message === "Authentication required") {
       clearSession();
       setUser(null);
+      setDashboard(null);
+      setApplications([]);
+      setEmailInsights([]);
+      setInterviewPrep(null);
+      setResumeMatchResult(null);
       setError("Your session expired. Please sign in again.");
       return;
     }
@@ -356,7 +363,20 @@ function App() {
     URL.revokeObjectURL(url);
   }
 
-  if (!user) {
+  if (loading && getToken()) {
+    return (
+      <div className="shell">
+        <section className="auth-shell">
+          <div className="card auth-card">
+            <p className="section-title">Resume Tracker</p>
+            <p className="muted">Loading...</p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (!user || !getToken()) {
     return (
       <div className="shell">
         <section className="auth-shell">
