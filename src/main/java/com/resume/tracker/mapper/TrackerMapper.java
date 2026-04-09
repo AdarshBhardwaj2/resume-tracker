@@ -46,6 +46,12 @@ public class TrackerMapper {
         response.setConfidenceScore(emailAnalysis.getConfidenceScore());
         response.setSummary(emailAnalysis.getSummary());
         response.setSuggestedAction(emailAnalysis.getSuggestedAction());
+        response.setActionRequired(emailAnalysis.getActionRequired());
+        response.setRecruiterIntent(emailAnalysis.getRecruiterIntent());
+        response.setResponseWindow(emailAnalysis.getResponseWindow());
+        response.setNextStep(emailAnalysis.getNextStep());
+        response.setReplyDraft(emailAnalysis.getReplyDraft());
+        response.setRiskLevel(emailAnalysis.getRiskLevel());
         if (emailAnalysis.getApplication() != null) {
             response.setApplicationId(emailAnalysis.getApplication().getId());
             response.setApplicationLabel(emailAnalysis.getApplication().getCompany() + " - " + emailAnalysis.getApplication().getRole());

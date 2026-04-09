@@ -46,6 +46,14 @@ a {
   padding: 24px 0 72px;
 }
 
+.auth-shell {
+  min-height: calc(100vh - 96px);
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+  align-items: center;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -110,6 +118,25 @@ a {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.user-chip {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(23, 32, 51, 0.1);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.user-chip strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.user-chip span {
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .button {
@@ -234,6 +261,32 @@ a {
   align-self: start;
 }
 
+.auth-copy {
+  min-height: 520px;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+}
+
+.auth-copy h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.auth-card {
+  max-width: 460px;
+  width: 100%;
+  justify-self: end;
+}
+
+.auth-toggle {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
 .card-large {
   min-height: auto;
 }
@@ -312,6 +365,11 @@ a {
 .insight {
   padding: 14px 0;
   border-bottom: 1px solid #f2f4f7;
+}
+
+.insight-rich {
+  display: grid;
+  gap: 14px;
 }
 
 .compact-row,
@@ -478,6 +536,12 @@ a {
   gap: 12px;
 }
 
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .mini-score-card {
   padding: 14px;
   border-radius: 16px;
@@ -564,6 +628,17 @@ a {
   line-height: 1.55;
 }
 
+.reply-box {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(33, 50, 77, 0.05);
+  border: 1px solid rgba(23, 32, 51, 0.08);
+}
+
+.reply-box p:last-child {
+  margin: 0;
+}
+
 .dense-list {
   display: grid;
   gap: 8px;
@@ -617,7 +692,9 @@ a {
   .stats-row,
   .grid,
   .form-grid,
-  .score-grid {
+  .score-grid,
+  .auth-shell,
+  .analysis-grid {
     grid-template-columns: 1fr;
   }
 
@@ -637,6 +714,11 @@ a {
   .feature-strip {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .auth-card {
+    justify-self: stretch;
+    max-width: none;
   }
 }
 

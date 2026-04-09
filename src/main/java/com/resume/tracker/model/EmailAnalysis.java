@@ -12,6 +12,10 @@ public class EmailAnalysis {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     @Column(nullable = false)
     private String sender;
 
@@ -43,6 +47,24 @@ public class EmailAnalysis {
     @Column(nullable = false, length = 2000)
     private String suggestedAction;
 
+    @Column(nullable = false)
+    private Boolean actionRequired;
+
+    @Column(nullable = false)
+    private String recruiterIntent;
+
+    @Column(nullable = false)
+    private String responseWindow;
+
+    @Column(nullable = false, length = 2000)
+    private String nextStep;
+
+    @Column(nullable = false, length = 3000)
+    private String replyDraft;
+
+    @Column(nullable = false)
+    private String riskLevel;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "application_id")
     private JobApplication application;
@@ -61,6 +83,14 @@ public class EmailAnalysis {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
     }
 
     public String getSender() {
@@ -141,6 +171,54 @@ public class EmailAnalysis {
 
     public void setSuggestedAction(String suggestedAction) {
         this.suggestedAction = suggestedAction;
+    }
+
+    public Boolean getActionRequired() {
+        return actionRequired;
+    }
+
+    public void setActionRequired(Boolean actionRequired) {
+        this.actionRequired = actionRequired;
+    }
+
+    public String getRecruiterIntent() {
+        return recruiterIntent;
+    }
+
+    public void setRecruiterIntent(String recruiterIntent) {
+        this.recruiterIntent = recruiterIntent;
+    }
+
+    public String getResponseWindow() {
+        return responseWindow;
+    }
+
+    public void setResponseWindow(String responseWindow) {
+        this.responseWindow = responseWindow;
+    }
+
+    public String getNextStep() {
+        return nextStep;
+    }
+
+    public void setNextStep(String nextStep) {
+        this.nextStep = nextStep;
+    }
+
+    public String getReplyDraft() {
+        return replyDraft;
+    }
+
+    public void setReplyDraft(String replyDraft) {
+        this.replyDraft = replyDraft;
+    }
+
+    public String getRiskLevel() {
+        return riskLevel;
+    }
+
+    public void setRiskLevel(String riskLevel) {
+        this.riskLevel = riskLevel;
     }
 
     public JobApplication getApplication() {

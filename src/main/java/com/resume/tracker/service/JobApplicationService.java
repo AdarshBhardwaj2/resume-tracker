@@ -6,6 +6,7 @@ import com.resume.tracker.exception.ResourceNotFoundException;
 import com.resume.tracker.mapper.TrackerMapper;
 import com.resume.tracker.model.ApplicationStatus;
 import com.resume.tracker.model.JobApplication;
+import com.resume.tracker.model.User;
 import com.resume.tracker.repository.JobApplicationRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -20,19 +21,23 @@ public class JobApplicationService {
     private final JobApplicationRepository jobApplicationRepository;
     private final ResumeStorageService resumeStorageService;
     private final TrackerMapper trackerMapper;
+    private final CurrentUserService currentUserService;
 
     public JobApplicationService(JobApplicationRepository jobApplicationRepository,
                                  ResumeStorageService resumeStorageService,
-                                 TrackerMapper trackerMapper) {
+                                 TrackerMapper trackerMapper,
+                                 CurrentUserService currentUserService) {
         this.jobApplicationRepository = jobApplicationRepository;
         this.resumeStorageService = resumeStorageService;
         this.trackerMapper = trackerMapper;
+        this.currentUserService = currentUserService;
     }
 
     public List<ApplicationResponse> getAll(String status, String keyword) {
+        User currentUser = currentUserService.getCurrentUser();
         List<JobApplication> applications;
 
-        applications = jobApplicationRepository.findAll();
+        applications = jobApplicationRepository.findByOwnerOrderByUpdatedAtDesc(currentUser);
 
         if (status != null && !status.isBlank()) {
             ApplicationStatus parsedStatus = ApplicationStatus.valueOf(status.toUpperCase());
@@ -59,12 +64,13 @@ public class JobApplicationService {
     }
 
     public ApplicationResponse getOne(Long id) {
-        return trackerMapper.toApplicationResponse(fetchById(id));
+        return trackerMapper.toApplicationResponse(fetchById(id, currentUserService.getCurrentUser()));
     }
 
     @CacheEvict(value = {"dashboardStats", "applicationMetrics"}, allEntries = true)
     public ApplicationResponse create(ApplicationRequest request, MultipartFile resume) {
         JobApplication application = new JobApplication();
+        application.setOwner(currentUserService.getCurrentUser());
         applyRequest(application, request);
         updateResume(application, resume);
         return trackerMapper.toApplicationResponse(jobApplicationRepository.save(application));
@@ -72,7 +78,7 @@ public class JobApplicationService {
 
     @CacheEvict(value = {"dashboardStats", "applicationMetrics"}, allEntries = true)
     public ApplicationResponse update(Long id, ApplicationRequest request, MultipartFile resume) {
-        JobApplication application = fetchById(id);
+        JobApplication application = fetchById(id, currentUserService.getCurrentUser());
         applyRequest(application, request);
         updateResume(application, resume);
         return trackerMapper.toApplicationResponse(jobApplicationRepository.save(application));
@@ -80,13 +86,15 @@ public class JobApplicationService {
 
     @CacheEvict(value = {"dashboardStats", "applicationMetrics"}, allEntries = true)
     public void delete(Long id) {
-        JobApplication application = fetchById(id);
+        JobApplication application = fetchById(id, currentUserService.getCurrentUser());
         resumeStorageService.deleteIfPresent(application.getResumeStoredName());
         jobApplicationRepository.delete(application);
     }
 
-    private JobApplication fetchById(Long id) {
-        return jobApplicationRepository.findById(id)
+    private JobApplication fetchById(Long id, User owner) {
+        return jobApplicationRepository.findByOwnerOrderByUpdatedAtDesc(owner).stream()
+                .filter(application -> application.getId().equals(id))
+                .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
     }
 

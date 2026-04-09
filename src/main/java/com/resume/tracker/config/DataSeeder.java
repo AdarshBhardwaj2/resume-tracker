@@ -71,6 +71,12 @@ public class DataSeeder implements CommandLineRunner {
         emailAnalysis.setConfidenceScore(88);
         emailAnalysis.setSummary("Recruiter confirmed the next round and expects a quick response.");
         emailAnalysis.setSuggestedAction("Reply with interview availability and prepare system design talking points.");
+        emailAnalysis.setActionRequired(true);
+        emailAnalysis.setRecruiterIntent("Schedule interview");
+        emailAnalysis.setResponseWindow("Reply within 24 hours");
+        emailAnalysis.setNextStep("Send your available interview slots and confirm your timezone.");
+        emailAnalysis.setReplyDraft("Hi, thank you for the update. I am available for the next round and can share suitable time slots today. Please let me know the preferred time zone for scheduling.");
+        emailAnalysis.setRiskLevel("High");
         emailAnalysis.setApplication(applicationOne);
 
         emailAnalysisRepository.save(emailAnalysis);
