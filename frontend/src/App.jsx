@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   analyzeEmail,
   analyzeResumeMatch,
-  clearSession,
   createApplication,
   deleteApplication,
   deleteEmailInsight,
@@ -10,12 +9,6 @@ import {
   fetchDashboard,
   fetchEmailInsights,
   fetchInterviewPrep,
-  fetchMe,
-  getStoredUser,
-  getToken,
-  login,
-  register,
-  storeSession,
   updateApplication
 } from "./api";
 
@@ -47,19 +40,11 @@ const emptyResumeMatch = {
   jobDescription: ""
 };
 
-const emptyAuth = {
-  username: "",
-  password: ""
-};
-
 const statusOptions = ["SAVED", "APPLIED", "SHORTLISTED", "INTERVIEW", "OFFER", "REJECTED"];
 const priorityOptions = ["LOW", "MEDIUM", "HIGH"];
 const tabs = ["overview", "applications", "emails", "resume-match", "interview-prep"];
 
 function App() {
-  const [user, setUser] = useState(() => (getToken() ? getStoredUser() : null));
-  const [authMode, setAuthMode] = useState("login");
-  const [authForm, setAuthForm] = useState(emptyAuth);
   const [dashboard, setDashboard] = useState(null);
   const [applications, setApplications] = useState([]);
   const [emailInsights, setEmailInsights] = useState([]);
@@ -74,54 +59,10 @@ function App() {
   const [filters, setFilters] = useState({ status: "", keyword: "" });
   const [activeTab, setActiveTab] = useState("overview");
   const [sortBy, setSortBy] = useState("updated");
-  const [loading, setLoading] = useState(Boolean(getToken()));
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [authNotice, setAuthNotice] = useState("");
-
-  useEffect(() => {
-    async function bootstrap() {
-      if (!getToken()) {
-        clearSession();
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      try {
-        const currentUser = await fetchMe();
-        setUser(currentUser);
-      } catch {
-        clearSession();
-        setUser(null);
-        setAuthNotice("");
-      } finally {
-        setLoading(false);
-      }
-    }
-    bootstrap();
-  }, []);
-
-  useEffect(() => {
-    if (user && getToken()) {
-      loadData();
-    }
-  }, [user, filters.status, filters.keyword]);
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-    async function loadInterviewPrep() {
-      try {
-        const data = await fetchInterviewPrep(interviewRole);
-        setInterviewPrep(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-    loadInterviewPrep();
-  }, [user, interviewRole]);
 
   async function loadData() {
     setLoading(true);
@@ -136,68 +77,27 @@ function App() {
       setApplications(applicationData);
       setEmailInsights(emailData);
     } catch (err) {
-      handleAuthError(err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
-  function handleAuthError(err) {
-    if (err.message === "Authentication required") {
-      clearSession();
-      setUser(null);
-      setDashboard(null);
-      setApplications([]);
-      setEmailInsights([]);
-      setInterviewPrep(null);
-      setResumeMatchResult(null);
-      setError("");
-      setMessage("");
-      setAuthNotice("Please sign in to continue.");
-      return;
+  useEffect(() => {
+    loadData();
+  }, [filters.status, filters.keyword]);
+
+  useEffect(() => {
+    async function loadInterviewPrep() {
+      try {
+        const data = await fetchInterviewPrep(interviewRole);
+        setInterviewPrep(data);
+      } catch (err) {
+        setError(err.message);
+      }
     }
-    setError(err.message);
-  }
-
-  function updateAuthField(event) {
-    const { name, value } = event.target;
-    setError("");
-    setAuthNotice("");
-    setAuthForm((current) => ({ ...current, [name]: value }));
-  }
-
-  async function handleAuthSubmit(event) {
-    event.preventDefault();
-    setSubmitting(true);
-    setError("");
-    setAuthNotice("");
-    try {
-      const response = authMode === "register"
-        ? await register(authForm)
-        : await login(authForm);
-      storeSession(response);
-      setUser(response.user);
-      setAuthForm(emptyAuth);
-      setMessage(authMode === "register" ? "Account created." : "Signed in.");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function handleLogout() {
-    clearSession();
-    setUser(null);
-    setDashboard(null);
-    setApplications([]);
-    setEmailInsights([]);
-    setInterviewPrep(null);
-    setResumeMatchResult(null);
-    setMessage("");
-    setError("");
-    setAuthNotice("");
-  }
+    loadInterviewPrep();
+  }, [interviewRole]);
 
   function updateApplicationField(event) {
     const { name, value } = event.target;
@@ -236,7 +136,7 @@ function App() {
       setResumeFile(null);
       await loadData();
     } catch (err) {
-      handleAuthError(err);
+      setError(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -256,7 +156,7 @@ function App() {
       setMessage("Email analyzed.");
       await loadData();
     } catch (err) {
-      handleAuthError(err);
+      setError(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -272,7 +172,7 @@ function App() {
       setResumeMatchResult(result);
       setMessage("Resume match analysis completed.");
     } catch (err) {
-      handleAuthError(err);
+      setError(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -284,7 +184,7 @@ function App() {
       setMessage("Application deleted.");
       await loadData();
     } catch (err) {
-      handleAuthError(err);
+      setError(err.message);
     }
   }
 
@@ -294,7 +194,7 @@ function App() {
       setMessage("Email insight deleted.");
       await loadData();
     } catch (err) {
-      handleAuthError(err);
+      setError(err.message);
     }
   }
 
@@ -371,82 +271,6 @@ function App() {
     URL.revokeObjectURL(url);
   }
 
-  if (loading && getToken()) {
-    return (
-      <div className="shell">
-        <section className="auth-shell">
-          <div className="card auth-card">
-            <p className="section-title">Resume Tracker</p>
-            <p className="muted">Loading...</p>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
-  if (!user || !getToken()) {
-    return (
-      <div className="shell">
-        <section className="auth-shell">
-          <div className="card card-large auth-copy">
-            <p className="section-title">Resume Tracker</p>
-            <h1>Track applications, recruiter emails, and resume fit.</h1>
-            <div className="list">
-              {[
-                "Use one simple login to open the tracker.",
-                "Track every role, follow-up, and resume version in one place.",
-                "Turn recruiter emails into next steps, urgency, and reply drafts."
-              ].map((item) => (
-                <div key={item} className="list-item">
-                  <span className="dot" />
-                  <p>{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card auth-card">
-            <div className="auth-toggle">
-              <button
-                className={`tab ${authMode === "login" ? "tab-active" : ""}`}
-                onClick={() => {
-                  setAuthMode("login");
-                  setError("");
-                  setAuthNotice("");
-                }}
-              >
-                Login
-              </button>
-              <button
-                className={`tab ${authMode === "register" ? "tab-active" : ""}`}
-                onClick={() => {
-                  setAuthMode("register");
-                  setError("");
-                  setAuthNotice("");
-                }}
-              >
-                Register
-              </button>
-            </div>
-
-            {authNotice ? <div className="notice notice-error">{authNotice}</div> : null}
-            {error ? <div className="notice notice-error">{error}</div> : null}
-
-            <form className="form-grid" onSubmit={handleAuthSubmit}>
-              <input className="input full-span" name="username" value={authForm.username} onChange={updateAuthField} placeholder="Username" required />
-              <input className="input full-span" name="password" type="password" value={authForm.password} onChange={updateAuthField} placeholder="Password" required />
-              <div className="actions full-span">
-                <button className="button button-primary" disabled={submitting}>
-                  {submitting ? "Please wait..." : authMode === "register" ? "Create account" : "Sign in"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
   return (
     <div className="shell">
       <header className="header">
@@ -455,13 +279,8 @@ function App() {
           <p className="header-subtitle">Applications, resume match, email analysis, and interview preparation.</p>
         </div>
         <div className="header-actions">
-          <div className="user-chip">
-            <strong>{user.fullName}</strong>
-            <span>{user.email}</span>
-          </div>
           <button className="button button-secondary" onClick={() => setActiveTab("applications")}>Add Application</button>
           <button className="button button-primary" onClick={loadData}>Refresh</button>
-          <button className="button button-secondary" onClick={handleLogout}>Logout</button>
         </div>
       </header>
 
@@ -600,8 +419,8 @@ function App() {
                   <strong>{item.subject}</strong>
                   <p className="muted">{item.sender}</p>
                   <div className="pill-list">
-                    <span className="pill">{item.recruiterIntent || item.category}</span>
-                    <span className="pill">{item.responseWindow}</span>
+                    <span className="pill">{item.category}</span>
+                    <span className="pill">{item.urgency}</span>
                   </div>
                 </div>
               ))}
@@ -703,7 +522,7 @@ function App() {
       {activeTab === "emails" ? (
         <section className="grid">
           <div className="card">
-            <p className="section-title">Recruiter email analyzer</p>
+            <p className="section-title">Email analysis</p>
             <form className="form-grid" onSubmit={handleEmailSubmit}>
               <input className="input" name="sender" value={emailForm.sender} onChange={updateEmailField} placeholder="Sender email" required />
               <input className="input" name="subject" value={emailForm.subject} onChange={updateEmailField} placeholder="Subject" required />
@@ -711,7 +530,7 @@ function App() {
                 <option value="">Link application</option>
                 {applications.map((item) => <option key={item.id} value={item.id}>{item.company} - {item.role}</option>)}
               </select>
-              <textarea className="input textarea full-span" name="body" value={emailForm.body} onChange={updateEmailField} placeholder="Paste recruiter email here" rows="10" required />
+              <textarea className="input textarea full-span" name="body" value={emailForm.body} onChange={updateEmailField} placeholder="Paste email body" rows="10" required />
               <div className="actions full-span">
                 <button className="button button-primary" disabled={submitting}>
                   {submitting ? "Analyzing..." : "Analyze Email"}
@@ -722,7 +541,7 @@ function App() {
                   onClick={() => setEmailForm({
                     sender: "recruiter@example.com",
                     subject: "Interview scheduling for backend developer role",
-                    body: "We would like to schedule your interview this week. Please share your availability by tomorrow and confirm whether you are comfortable with a 90 minute technical round.",
+                    body: "We would like to schedule your interview this week. Please share your availability by tomorrow.",
                     applicationId: ""
                   })}
                 >
@@ -735,9 +554,8 @@ function App() {
           <div className="card card-large">
             <p className="section-title">Email results</p>
             <div className="stack">
-              {emailInsights.length === 0 ? <p className="muted">Analyze a recruiter email to see intent, urgency, next step, and a reply draft.</p> : null}
               {emailInsights.map((item) => (
-                <article key={item.id} className="insight insight-rich">
+                <article key={item.id} className="insight">
                   <div className="insight-head">
                     <div>
                       <strong>{item.subject}</strong>
@@ -747,24 +565,12 @@ function App() {
                   </div>
                   <div className="pill-list">
                     <span className="pill">{item.category}</span>
-                    <span className="pill">{item.recruiterIntent}</span>
                     <span className="pill">{item.detectedStage}</span>
-                    <span className="pill">{item.responseWindow}</span>
-                    <span className="pill">{item.riskLevel} risk</span>
-                    <span className="pill">{item.confidenceScore}% confidence</span>
-                  </div>
-                  <div className="analysis-grid">
-                    <MetricCard title="Action required" value={item.actionRequired ? "Yes" : "No"} />
-                    <MetricCard title="Urgency" value={item.urgency} />
-                    <MetricCard title="Tone" value={item.tone} />
+                    <span className="pill">{item.urgency}</span>
+                    <span className="pill">{item.confidenceScore}%</span>
                   </div>
                   <p><strong>Summary:</strong> {item.summary}</p>
-                  <p><strong>Suggested action:</strong> {item.suggestedAction}</p>
-                  <p><strong>Next step:</strong> {item.nextStep}</p>
-                  <div className="reply-box">
-                    <p className="section-subtitle">Reply draft</p>
-                    <p>{item.replyDraft}</p>
-                  </div>
+                  <p><strong>Action:</strong> {item.suggestedAction}</p>
                 </article>
               ))}
             </div>
@@ -922,15 +728,6 @@ function MiniScoreCard({ label, value }) {
   );
 }
 
-function MetricCard({ title, value }) {
-  return (
-    <div className="mini-score-card">
-      <span>{title}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
 function TagBlock({ title, items }) {
   return (
     <div>
@@ -1008,7 +805,7 @@ function buildUpcomingTasks(applications, emails) {
     }
     if (item.status === "INTERVIEW") {
       tasks.push({
-        title: "Prepare for interview",
+        title: `Prepare for interview`,
         detail: `${item.company} - ${item.role}`,
         date: item.followUpDate || "Soon"
       });
@@ -1016,11 +813,11 @@ function buildUpcomingTasks(applications, emails) {
   });
 
   emails.forEach((item) => {
-    if (item.actionRequired) {
+    if (item.urgency === "High") {
       tasks.push({
-        title: item.recruiterIntent || "Reply to recruiter",
+        title: "Reply to recruiter email",
         detail: item.subject,
-        date: item.responseWindow || "Priority"
+        date: "Priority"
       });
     }
   });
