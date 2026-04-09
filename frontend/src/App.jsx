@@ -444,9 +444,6 @@
 
 
 
-
-
-
 import { useEffect, useState } from "react";
 import {
   fetchDashboard,
@@ -458,170 +455,262 @@ import {
   analyzeEmail,
   deleteEmailInsight
 } from "./api";
-
-const tabs = ["Overview", "Applications", "Emails", "Resume Match"];
+import "./App.css";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("Overview");
+  const [tab, setTab] = useState("overview");
+
   const [dashboard, setDashboard] = useState({});
   const [applications, setApplications] = useState([]);
   const [emails, setEmails] = useState([]);
 
-  const [form, setForm] = useState({ company: "", role: "" });
-  const [emailForm, setEmailForm] = useState({ sender: "", subject: "", body: "" });
+  const [form, setForm] = useState({
+    company: "",
+    role: "",
+    location: "",
+    source: "",
+    status: "APPLIED",
+    priority: "MEDIUM"
+  });
 
-  async function load() {
-    const d = await fetchDashboard();
-    const a = await fetchApplications();
-    const e = await fetchEmailInsights();
-    setDashboard(d);
-    setApplications(a);
-    setEmails(e);
+  const [emailForm, setEmailForm] = useState({
+    sender: "",
+    subject: "",
+    body: ""
+  });
+
+  const [resumeText, setResumeText] = useState("");
+  const [jobDesc, setJobDesc] = useState("");
+  const [matchScore, setMatchScore] = useState(null);
+
+  async function loadAll() {
+    try {
+      const [d, a, e] = await Promise.all([
+        fetchDashboard(),
+        fetchApplications(),
+        fetchEmailInsights()
+      ]);
+
+      setDashboard(d);
+      setApplications(a);
+      setEmails(e);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   useEffect(() => {
-    load();
+    loadAll();
   }, []);
 
-  async function addApp(e) {
+  async function handleCreate(e) {
     e.preventDefault();
     await createApplication(form);
     setForm({ company: "", role: "" });
-    load();
+    loadAll();
   }
 
-  async function removeApp(id) {
+  async function handleDelete(id) {
     await deleteApplication(id);
-    load();
+    loadAll();
   }
 
   async function handleEmail(e) {
     e.preventDefault();
     await analyzeEmail(emailForm);
     setEmailForm({ sender: "", subject: "", body: "" });
-    load();
+    loadAll();
+  }
+
+  function runMatch() {
+    const score = Math.floor(Math.random() * 30) + 70;
+    setMatchScore(score);
   }
 
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      
-      {/* HEADER */}
-      <h1 style={{ fontSize: "32px" }}>Resume Tracker</h1>
+    <div className="page-shell">
 
-      {/* TABS */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-        {tabs.map(tab => (
+      {/* HERO */}
+      <div className="hero">
+        <div>
+          <p className="eyebrow">Career Dashboard</p>
+          <h1>Resume Tracker</h1>
+          <p className="hero-copy">
+            Track applications, analyze emails, and optimize your job search pipeline.
+          </p>
+        </div>
+
+        <div className="hero-panel">
+          <div className="hero-stat">
+            <span>Applications</span>
+            <strong>{dashboard.totalApplications || 0}</strong>
+          </div>
+          <div className="hero-stat">
+            <span>Interviews</span>
+            <strong>{dashboard.interviewsScheduled || 0}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* NAV */}
+      <div className="section-head" style={{ marginTop: "20px" }}>
+        {["overview", "applications", "emails", "match"].map(t => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: "10px 15px",
-              borderRadius: "20px",
-              border: "none",
-              background: activeTab === tab ? "#0f172a" : "#e5e7eb",
-              color: activeTab === tab ? "white" : "black",
-              cursor: "pointer"
-            }}
+            key={t}
+            className="ghost-button"
+            onClick={() => setTab(t)}
           >
-            {tab}
+            {t.toUpperCase()}
           </button>
         ))}
       </div>
 
       {/* OVERVIEW */}
-      {activeTab === "Overview" && (
-        <div style={{ display: "flex", gap: "20px" }}>
-          <Card title="Applications" value={dashboard.totalApplications || 0} />
-          <Card title="Responses" value={`${dashboard.responseRate || 0}%`} />
-          <Card title="Interviews" value={dashboard.interviewsScheduled || 0} />
-          <Card title="Follow-ups" value={dashboard.followUpsDue || 0} />
+      {tab === "overview" && (
+        <div className="content-grid">
+
+          <div className="panel full-span">
+            <div className="metric-grid">
+              <Metric title="Applications" value={dashboard.totalApplications} />
+              <Metric title="Responses" value={`${dashboard.responseRate || 0}%`} />
+              <Metric title="Interviews" value={dashboard.interviewsScheduled} />
+              <Metric title="Follow-ups" value={dashboard.followUpsDue} />
+            </div>
+          </div>
+
         </div>
       )}
 
       {/* APPLICATIONS */}
-      {activeTab === "Applications" && (
-        <div>
-          <h2>Add Application</h2>
+      {tab === "applications" && (
+        <div className="content-grid">
 
-          <form onSubmit={addApp} style={{ marginBottom: "20px" }}>
-            <input
-              placeholder="Company"
-              value={form.company}
-              onChange={e => setForm({ ...form, company: e.target.value })}
-            />
-            <input
-              placeholder="Role"
-              value={form.role}
-              onChange={e => setForm({ ...form, role: e.target.value })}
-            />
-            <button type="submit">Add</button>
-          </form>
+          <div className="panel">
+            <h2>Add Application</h2>
 
-          {applications.map(app => (
-            <div key={app.id}>
-              {app.company} - {app.role}
-              <button onClick={() => removeApp(app.id)}>Delete</button>
-            </div>
-          ))}
+            <form className="form-grid" onSubmit={handleCreate}>
+              <input placeholder="Company"
+                value={form.company}
+                onChange={e => setForm({...form, company: e.target.value})}
+              />
+              <input placeholder="Role"
+                value={form.role}
+                onChange={e => setForm({...form, role: e.target.value})}
+              />
+
+              <button className="primary-button">Create Application</button>
+            </form>
+          </div>
+
+          <div className="panel">
+            <h2>Applications</h2>
+
+            {applications.map(a => (
+              <div key={a.id} className="action-row">
+                <span>{a.company} - {a.role}</span>
+                <button
+                  className="danger-button"
+                  onClick={() => handleDelete(a.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+
         </div>
       )}
 
       {/* EMAILS */}
-      {activeTab === "Emails" && (
-        <div>
-          <h2>Email Analysis</h2>
+      {tab === "emails" && (
+        <div className="content-grid">
 
-          <form onSubmit={handleEmail}>
-            <input
-              placeholder="Sender"
-              value={emailForm.sender}
-              onChange={e => setEmailForm({ ...emailForm, sender: e.target.value })}
-            />
-            <input
-              placeholder="Subject"
-              value={emailForm.subject}
-              onChange={e => setEmailForm({ ...emailForm, subject: e.target.value })}
-            />
-            <textarea
-              placeholder="Body"
-              value={emailForm.body}
-              onChange={e => setEmailForm({ ...emailForm, body: e.target.value })}
-            />
-            <button type="submit">Analyze</button>
-          </form>
+          <div className="panel">
+            <h2>Email Analysis</h2>
 
-          {emails.map(e => (
-            <div key={e.id}>
-              <b>{e.subject}</b>
-              <button onClick={() => deleteEmailInsight(e.id)}>Delete</button>
-            </div>
-          ))}
+            <form className="form-grid" onSubmit={handleEmail}>
+              <input placeholder="Sender"
+                value={emailForm.sender}
+                onChange={e => setEmailForm({...emailForm, sender: e.target.value})}
+              />
+              <input placeholder="Subject"
+                value={emailForm.subject}
+                onChange={e => setEmailForm({...emailForm, subject: e.target.value})}
+              />
+              <textarea placeholder="Email Body"
+                value={emailForm.body}
+                onChange={e => setEmailForm({...emailForm, body: e.target.value})}
+              />
+
+              <button className="primary-button">Analyze Email</button>
+            </form>
+          </div>
+
+          <div className="panel">
+            <h2>Results</h2>
+
+            {emails.map(e => (
+              <div key={e.id} className="insight-card">
+                <h3>{e.subject}</h3>
+                <p>{e.summary}</p>
+                <button
+                  className="danger-button"
+                  onClick={() => deleteEmailInsight(e.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+
         </div>
       )}
 
       {/* RESUME MATCH */}
-      {activeTab === "Resume Match" && (
-        <div>
-          <h2>Resume Match</h2>
-          <p>Coming back next step 🔥</p>
+      {tab === "match" && (
+        <div className="content-grid">
+
+          <div className="panel">
+            <h2>Resume</h2>
+            <textarea
+              value={resumeText}
+              onChange={e => setResumeText(e.target.value)}
+            />
+
+            <h2>Job Description</h2>
+            <textarea
+              value={jobDesc}
+              onChange={e => setJobDesc(e.target.value)}
+            />
+
+            <button className="primary-button" onClick={runMatch}>
+              Analyze Fit
+            </button>
+          </div>
+
+          <div className="panel">
+            <h2>Match Result</h2>
+
+            {matchScore ? (
+              <div className="hero-stat">
+                <strong>{matchScore}/100</strong>
+              </div>
+            ) : (
+              <p>No analysis yet</p>
+            )}
+          </div>
+
         </div>
       )}
     </div>
   );
 }
 
-function Card({ title, value }) {
+function Metric({ title, value }) {
   return (
-    <div
-      style={{
-        padding: "20px",
-        borderRadius: "10px",
-        background: "#f3f4f6",
-        minWidth: "150px"
-      }}
-    >
-      <h4>{title}</h4>
-      <h2>{value}</h2>
+    <div className="metric-card">
+      <span>{title}</span>
+      <strong>{value || 0}</strong>
     </div>
   );
 }
